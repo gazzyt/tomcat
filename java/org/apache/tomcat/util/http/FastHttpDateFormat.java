@@ -22,10 +22,8 @@ import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -52,21 +50,16 @@ public final class FastHttpDateFormat {
     public static final String RFC1123_DATE = "EEE, dd MMM yyyy HH:mm:ss zzz";
 
     // HTTP date formats
-    private static final String DATE_RFC5322 = "EEE, dd MMM yyyy HH:mm:ss z";
     private static final String DATE_OBSOLETE_RFC850 = "EEEE, dd-MMM-[yyyy][yy] HH:mm:ss zzz";
     private static final String DATE_OBSOLETE_ASCTIME = "[EEEE][EE] [MMMM][MMM] d HH:mm:ss yyyy";
 
-    private static final ConcurrentDateFormat FORMAT_RFC5322;
     private static final DateTimeFormatter FORMAT_OBSOLETE_RFC850;
     private static final DateTimeFormatter FORMAT_OBSOLETE_ASCTIME;
 
     private static final DateTimeFormatter[] httpParseFormats;
 
     static {
-        // All the formats that use a timezone use GMT
-        TimeZone tz = TimeZone.getTimeZone("GMT");
-
-        FORMAT_RFC5322 = new ConcurrentDateFormat(DATE_RFC5322, Locale.US, tz);
+        
         FORMAT_OBSOLETE_RFC850 = DateTimeFormatter.ofPattern(DATE_OBSOLETE_RFC850, Locale.US).withZone(ZoneOffset.UTC);
         FORMAT_OBSOLETE_ASCTIME = DateTimeFormatter.ofPattern(DATE_OBSOLETE_ASCTIME, Locale.US).withZone(ZoneOffset.UTC);
         
@@ -108,7 +101,8 @@ public final class FastHttpDateFormat {
     public static final String getCurrentDate() {
         long now = System.currentTimeMillis();
         if ((now - currentDateGenerated) > 1000) {
-            currentDate = FORMAT_RFC5322.format(new Date(now));
+            ZonedDateTime zonedDateTime = Instant.ofEpochMilli(now).atZone(ZoneOffset.UTC);
+            currentDate = zonedDateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME);
             currentDateGenerated = now;
         }
         return currentDate;
