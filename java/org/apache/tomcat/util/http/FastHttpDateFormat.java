@@ -17,11 +17,11 @@
 package org.apache.tomcat.util.http;
 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -53,25 +53,25 @@ public final class FastHttpDateFormat {
 
     // HTTP date formats
     private static final String DATE_RFC5322 = "EEE, dd MMM yyyy HH:mm:ss z";
-    private static final String DATE_OBSOLETE_RFC850 = "EEEEEE, dd-MMM-yy HH:mm:ss zzz";
-    private static final String DATE_OBSOLETE_ASCTIME = "EEE MMMM d HH:mm:ss yyyy";
+    private static final String DATE_OBSOLETE_RFC850 = "EEEE, dd-MMM-[yyyy][yy] HH:mm:ss zzz";
+    private static final String DATE_OBSOLETE_ASCTIME = "[EEEE][EE] [MMMM][MMM] d HH:mm:ss yyyy";
 
     private static final ConcurrentDateFormat FORMAT_RFC5322;
-    private static final ConcurrentDateFormat FORMAT_OBSOLETE_RFC850;
-    private static final ConcurrentDateFormat FORMAT_OBSOLETE_ASCTIME;
+    private static final DateTimeFormatter FORMAT_OBSOLETE_RFC850;
+    private static final DateTimeFormatter FORMAT_OBSOLETE_ASCTIME;
 
-    private static final ConcurrentDateFormat[] httpParseFormats;
+    private static final DateTimeFormatter[] httpParseFormats;
 
     static {
         // All the formats that use a timezone use GMT
         TimeZone tz = TimeZone.getTimeZone("GMT");
 
         FORMAT_RFC5322 = new ConcurrentDateFormat(DATE_RFC5322, Locale.US, tz);
-        FORMAT_OBSOLETE_RFC850 = new ConcurrentDateFormat(DATE_OBSOLETE_RFC850, Locale.US, tz);
-        FORMAT_OBSOLETE_ASCTIME = new ConcurrentDateFormat(DATE_OBSOLETE_ASCTIME, Locale.US, tz);
-
-        httpParseFormats = new ConcurrentDateFormat[] {
-                FORMAT_RFC5322, FORMAT_OBSOLETE_RFC850, FORMAT_OBSOLETE_ASCTIME };
+        FORMAT_OBSOLETE_RFC850 = DateTimeFormatter.ofPattern(DATE_OBSOLETE_RFC850, Locale.US).withZone(ZoneOffset.UTC);
+        FORMAT_OBSOLETE_ASCTIME = DateTimeFormatter.ofPattern(DATE_OBSOLETE_ASCTIME, Locale.US).withZone(ZoneOffset.UTC);
+        
+        httpParseFormats = new DateTimeFormatter[] {
+            DateTimeFormatter.RFC_1123_DATE_TIME, FORMAT_OBSOLETE_RFC850, FORMAT_OBSOLETE_ASCTIME };
     }
 
     /**
@@ -142,7 +142,7 @@ public final class FastHttpDateFormat {
             return cachedDate;
         }
 
-		ZonedDateTime zonedDateTime = Instant.ofEpochMilli(value).atZone(ZoneOffset.UTC);
+        ZonedDateTime zonedDateTime = Instant.ofEpochMilli(value).atZone(ZoneOffset.UTC);
         String newDate = zonedDateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
         updateFormatCache(longValue, newDate);
@@ -182,9 +182,9 @@ public final class FastHttpDateFormat {
         long date = -1;
         for (int i = 0; (date == -1) && (i < httpParseFormats.length); i++) {
             try {
-                date = httpParseFormats[i].parse(value).getTime();
+                date = ZonedDateTime.parse(value, httpParseFormats[i]).toInstant().toEpochMilli();
                 updateParseCache(value, Long.valueOf(date));
-            } catch (ParseException e) {
+            } catch (DateTimeParseException e) {
                 // Ignore
             }
         }
