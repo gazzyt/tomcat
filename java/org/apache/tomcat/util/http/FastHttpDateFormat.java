@@ -18,6 +18,10 @@ package org.apache.tomcat.util.http;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -138,7 +142,9 @@ public final class FastHttpDateFormat {
             return cachedDate;
         }
 
-        String newDate = FORMAT_RFC5322.format(new Date(value));
+		ZonedDateTime zonedDateTime = Instant.ofEpochMilli(value).atZone(ZoneOffset.UTC);
+        String newDate = zonedDateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME);
+
         updateFormatCache(longValue, newDate);
         return newDate;
     }
