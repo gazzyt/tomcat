@@ -82,4 +82,9 @@ public class TestFastHttpDateFormat {
 		Assert.assertEquals(1584376103000L, epoc);
     }
 
+    @Test
+    public void testParseDateParsesAscTimeLongDay() {
+		long epoc = FastHttpDateFormat.parseDate("Monday Mar 16 16:28:23 2020");
+		Assert.assertEquals(1584376103000L, epoc);
+    }
 }
