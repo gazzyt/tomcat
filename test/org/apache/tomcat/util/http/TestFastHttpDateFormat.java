@@ -59,14 +59,26 @@ public class TestFastHttpDateFormat {
     }
 
     @Test
-    public void testParseDateParsesRFC850Date() {
+    public void testParseDateParsesRFC850Date4DigitYear() {
 		long epoc = FastHttpDateFormat.parseDate("Monday, 16-Mar-2020 16:28:23 GMT");
 		Assert.assertEquals(1584376103000L, epoc);
     }
 
     @Test
-    public void testParseDateParsesAscTime() {
+    public void testParseDateParsesRFC850Date2DigitYear() {
+		long epoc = FastHttpDateFormat.parseDate("Monday, 16-Mar-20 16:28:23 GMT");
+		Assert.assertEquals(1584376103000L, epoc);
+    }
+
+    @Test
+    public void testParseDateParsesAscTimeShortMonth() {
 		long epoc = FastHttpDateFormat.parseDate("Mon Mar 16 16:28:23 2020");
+		Assert.assertEquals(1584376103000L, epoc);
+    }
+
+    @Test
+    public void testParseDateParsesAscTimeLongMonth() {
+		long epoc = FastHttpDateFormat.parseDate("Mon March 16 16:28:23 2020");
 		Assert.assertEquals(1584376103000L, epoc);
     }
 
